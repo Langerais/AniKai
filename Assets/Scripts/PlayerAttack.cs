@@ -21,6 +21,9 @@ public class PlayerAttack : MonoBehaviour
     public EnergyBar energyBar;
     public float energyConsumptionFreq = 0.1f;
     public float energyConsumptionStart;
+    public float energyConsumptionEnd;
+    public float energyRegenLast;
+    [SerializeField] public int energyRegenRate = 3; // Units Per Second
     
     private float attack1Time = 0;
     void Start()
@@ -28,6 +31,8 @@ public class PlayerAttack : MonoBehaviour
         animator = gameObject.GetComponent<Animator>();
         maxEnergy = gameObject.GetComponent<PlayerMovement>().maxEnergy;
         energy = maxEnergy;
+        energyConsumptionEnd = Time.time;
+        energyRegenLast = Time.time;
         //energyConsumptionStart = Time.time;
         //animation["Attack2"].wrapMode = WrapMode.Once;
     }
@@ -37,6 +42,7 @@ public class PlayerAttack : MonoBehaviour
     {
         RIP = gameObject.GetComponent<PlayerMovement>().health <= 0;
         energy = gameObject.GetComponent<PlayerMovement>().energy;
+        
 
         if (RIP)
         {
@@ -62,16 +68,13 @@ public class PlayerAttack : MonoBehaviour
         {
             if (energy > 0)
             {
-                Time.timeScale = 0.5f;
-                gameObject.GetComponent<Rigidbody2D>().gravityScale = 3.5f;
-                energyConsumptionStart = Time.time;
+                SlowTime(true);
             }
         }
 
         if (Input.GetMouseButtonUp(1))
         {
-            Time.timeScale = 1f;    
-            gameObject.GetComponent<Rigidbody2D>().gravityScale = 5f;
+            SlowTime(false);
         }
 
         if (Input.GetKeyDown(KeyCode.E))
@@ -79,8 +82,8 @@ public class PlayerAttack : MonoBehaviour
             Interact();
         }
 
-        SlowTimeEnergyReduction(); 
-        
+        SlowTimeEnergyReduction();
+        EnergyRegen();
     }
 
     void AttackSoundPlay()
@@ -108,10 +111,13 @@ public class PlayerAttack : MonoBehaviour
 
     void Attack(int type)
     {
+        bool dashing = animator.GetBool("isDashing");
+        bool canAttack = Time.time > attack1Time + maxDurationAttack1;
+        
         switch (type)
         {
             case 0: //Attack 1
-                if (Time.time > attack1Time + maxDurationAttack1)
+                if (canAttack && !dashing)
                 {
                     AttackSoundPlay();
                     attack1Time = Time.time;
@@ -138,6 +144,9 @@ public class PlayerAttack : MonoBehaviour
 
                     }
 
+                } else if (canAttack)
+                {
+                    
                 }
                 break;
 
@@ -180,12 +189,42 @@ public class PlayerAttack : MonoBehaviour
         return false;
     }
 
-    void SlowTime(float scale)
+    void SlowTime(bool slow)
     {
-        if (Time.timeScale == 1.0f)
-            Time.timeScale = scale;
+
+        if (slow)
+        {
+            if (energy > 0)
+            {
+                Time.timeScale = 0.5f;
+                gameObject.GetComponent<Rigidbody2D>().gravityScale = 3.5f;
+                energyConsumptionStart = Time.time;
+            }
+        }
         else
-            Time.timeScale = 1.0f;
+        {
+            Time.timeScale = 1f;    
+            gameObject.GetComponent<Rigidbody2D>().gravityScale = 5f;
+            energyConsumptionEnd = Time.time;
+        }
+
+
+    }
+
+    void EnergyRegen()
+    {
+        if ( Math.Abs(Time.timeScale - 1f) == 0     //If time NOT slowed
+             && energyConsumptionEnd + 2 < Time.time //Delay after last consumption
+             && energyRegenLast + 1 < Time.time)   //Energy Regen Speed
+        {
+            if (energy + energyRegenRate <= 100)
+            {
+                energy += energyRegenRate;
+                energyBar.SetEnergy(energy);
+                GetComponent<PlayerMovement>().energy = energy;
+            }
+            energyRegenLast = Time.time;
+        }
     }
 
     private void OnDrawGizmosSelected()

@@ -12,6 +12,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float jumpHeight = 10f;
     [SerializeField] private float minJumpHeight = 4f;
     [SerializeField] public float dashForce = 100000f;
+    [SerializeField] public float energyRestoreRate = 1;
     
     public AudioClip hitAudio;
     private Rigidbody2D rigidBody;
@@ -21,7 +22,7 @@ public class PlayerMovement : MonoBehaviour
     public GameObject dashP;   //Object with particles
     private ParticleSystem _dashPSys;    //Particles system
     
-    private float _inpX = 0;
+    private float inpX = 0;
 
     public HealthBar healthBar;
     public int health;
@@ -31,6 +32,7 @@ public class PlayerMovement : MonoBehaviour
     public int energy;
     public int maxEnergy = 100;
     public EnergyBar energyBar;
+    
 
     public float dashTimerStart;            //Dash started
     private float dashTimerCurrent;                 //Current dash timer (can dash when 0)            
@@ -214,16 +216,16 @@ public class PlayerMovement : MonoBehaviour
 
     private void Move()
     {
-        _inpX = Input.GetAxisRaw("Horizontal");
-        float moveBy = _inpX * speed;
+        inpX = Input.GetAxisRaw("Horizontal");
+        float moveBy = inpX * speed;
 
         Vector3 charScale = transform.localScale;
         
-        if (_inpX < 0)  //Right-left sprite
+        if (inpX < 0)  //Right-left sprite
         {
             charScale.x = -10;
         }        
-        if (_inpX > 0)
+        if (inpX > 0)
         {
             charScale.x = 10;
         }
@@ -450,6 +452,11 @@ public class PlayerMovement : MonoBehaviour
         }
 
         energyBar.SetEnergy(energy);
+    }
+
+    private void RegenEnergy()
+    {
+        
     }
 
     private void SetTempGod(float time)

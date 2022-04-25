@@ -8,7 +8,11 @@ public class EnergyBar : MonoBehaviour
 
 
     public Slider slider;
-    //public Animator spinnerAnimator;
+
+    [SerializeField] public float restoreRate = 1;
+    
+//public Animator spinnerAnimator;
+
 
     public void SetMaxEnergy(int energy)
     {

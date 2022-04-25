@@ -12,11 +12,13 @@ public class Drone_AI : MonoBehaviour
     public Animator animator;
     public GameObject bullet;
     private bool awake;
+    private static readonly int Awake = Animator.StringToHash("Awake");
+
     void Start()
     {
         lastShotTime = Time.time;
         animator = gameObject.GetComponent<Animator>();
-        awake = animator.GetBool("Awake");
+        awake = animator.GetBool(Awake);
     }
 
 
@@ -25,7 +27,7 @@ public class Drone_AI : MonoBehaviour
 
         bullet = GetComponentInChildren<BulletScript>().gameObject;
         
-        awake = animator.GetBool("Awake");
+        awake = animator.GetBool(Awake);
         
         if (awake)
         {
