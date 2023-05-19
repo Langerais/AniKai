@@ -11,17 +11,17 @@ public class TitleScreenManager : MonoBehaviour
     private Vector2 startPos;
     private float timePassed = 0;
     public Text pressAnyKey;
-    private float anyKeyAppearDelay = 1.5f;
+    private const float AnyKeyAppearDelay = 1.5f;
     private float anyKeyTransparency;
     private float anyKeyBlinkTime;
-    private float anyKeyBlinkDelay = 0.5f;
+    private const float AnyKeyBlinkDelay = 0.5f;
     private bool anyKeyAppeared;
     public Transform background;
     private Vector2 backgroundStartPos;
     private Vector2 backgroundEndPos;
     public Transform backgroundEndPoint;
-    
-    void Start()
+
+    private void Start()
     {
         anyKeyTransparency = 0;
         startPos = titleText.position;
@@ -31,8 +31,8 @@ public class TitleScreenManager : MonoBehaviour
         backgroundEndPos.x = backgroundEndPoint.position.x;
         backgroundEndPos.y = backgroundStartPos.y;
     }
-    
-    void Update()
+
+    private void Update()
     {
         timePassed += Time.deltaTime;
         
@@ -42,58 +42,37 @@ public class TitleScreenManager : MonoBehaviour
         pressAnyKey.color = new Color(1, 1, 1, anyKeyTransparency);
 
 
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            Application.Quit();
-        } 
-        else if (anyKeyAppeared && Input.anyKey)
-        {
-            StartTheGame();
-        }
+        if (Input.GetKeyDown(KeyCode.Escape)) { Application.Quit(); } 
+        
+        else if (anyKeyAppeared && Input.anyKey) { StartTheGame(); }
         
 
     }
 
-    void TitleAnimate()
+    private void TitleAnimate()
     {
         titleText.position = Vector3.Lerp(startPos, titleEndSpot.position,
             Mathf.PingPong(timePassed, 1));
+        
         background.position = Vector3.Lerp(backgroundStartPos, backgroundEndPos,
             Mathf.PingPong(timePassed / 60, 1f));
     }
 
-    void AnyKeyTextAnimate()
+    private void AnyKeyTextAnimate()
     {
-        if (anyKeyTransparency >= 1)
-        {
-            anyKeyAppeared = true;
-        }
+        if (anyKeyTransparency >= 1) { anyKeyAppeared = true; }
         
-        if (timePassed > anyKeyAppearDelay && !anyKeyAppeared)
-        {
-            anyKeyTransparency += 0.025f;
-        }
+        if (timePassed > AnyKeyAppearDelay && !anyKeyAppeared) { anyKeyTransparency += 0.025f; }
 
-        if (anyKeyAppeared && anyKeyBlinkTime + anyKeyBlinkDelay < Time.time)
+        if (anyKeyAppeared && anyKeyBlinkTime + AnyKeyBlinkDelay < Time.time)
         {
             anyKeyBlinkTime = Time.time;
-            
-            if (anyKeyTransparency != 1)
-            {
-                anyKeyTransparency = 1;
-            }
-            else
-            {
-                anyKeyTransparency = 0;
-            }
+            anyKeyTransparency = anyKeyTransparency != 1 ? 1 : 0;
         }
         
     }
 
-    void StartTheGame()
-    {
-        SceneManager.LoadScene("Game");
-    }
+    static void StartTheGame() { SceneManager.LoadScene("Game"); }
     
     
     

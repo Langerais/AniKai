@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Assertions.Must;
+using UnityEngine.Serialization;
 
 public class EnemyBasic : MonoBehaviour
 {
@@ -24,49 +25,39 @@ public class EnemyBasic : MonoBehaviour
     
     public int health;
     [SerializeField]public int maxHealth = 2;
-    public bool RIP;   //Is alive?
-    
+    [FormerlySerializedAs("RIP")] public bool rip;   //Is alive?
 
-    
-    void Start()
+
+    private void Start()
     {
         health = maxHealth;
         awarenessLostTime = Time.time;
-
+        player = GameObject.FindWithTag("Player");
         rigidBody = GetComponent<Rigidbody2D>();
+        audioSource = GetComponent<AudioSource>();
+        animator = GetComponent<Animator>();
     }
 
-    void Update()
+    private void Update()
     {
+        if (rip) return;
         
-        if(!RIP)
-        {
-            animator.SetInteger("Health", health);
-            animator.SetFloat("SpeedX", rigidBody.velocity.x);
-            animator.SetFloat("SpeedY", rigidBody.velocity.y);
+        animator.SetInteger("Health", health);
+        animator.SetFloat("SpeedX", rigidBody.velocity.x);
+        animator.SetFloat("SpeedY", rigidBody.velocity.y);
             
-            IsDead();
-            AwarenessCheck();
-            
-            if (Input.GetKeyDown(KeyCode.P))
-            {
-                WakeUp(true);
-            }
-
-        }
+        IsDead();
+        AwarenessCheck();
 
     }
 
-    void AwarenessCheck()
+    private void AwarenessCheck()
     {
 
         if (Vector2.Distance(player.transform.position, transform.position) > awarenessLostRange ||
             Mathf.Abs(player.transform.position.y - transform.position.y) > awarenessLostRange/2)       //If Player is in range
         {
-            if (awarenessLostTime + awarenessLostDelay < Time.time && canLooseAwareness)
-            {
-                WakeUp(false);
-            }
+            if (awarenessLostTime + awarenessLostDelay < Time.time && canLooseAwareness) { WakeUp(false); }
         }
         else       //If Player is NOT in range
         {
@@ -78,11 +69,7 @@ public class EnemyBasic : MonoBehaviour
     
     private void OnDrawGizmosSelected()
     {
-        if (awarenessSpot == null)
-        {
-            return;
-        }
-        Gizmos.DrawWireSphere(awarenessSpot.position, awarenessLostRange);
+        if (awarenessSpot != null) { Gizmos.DrawWireSphere(awarenessSpot.position, awarenessLostRange); }
     }
 
 
@@ -90,49 +77,48 @@ public class EnemyBasic : MonoBehaviour
     {
         if (health <= 0)
         {
-            RIP = true;
+            rip = true;
 
-            try
-            {
-                audioSource.Play();
-            }
+            try { audioSource.Play(); }
             catch (Exception e)
             {
-                //Console.WriteLine(e);
-                //throw;
+                // ignored
             }
-            
+
             animator.SetTrigger("Death");
             gameObject.layer = 14;
             ScoreManager.instance.AddScore(score);
         }
         else
         {
-            RIP = false;
+            rip = false;
         }
 
     }
 
     public void RemoveHp(int d)
     {
-        
-        if (health - d < 0) { health = 0; }
-        else
-        {
-            health -= d;
-        }
+        if (health <= 0) return;
+
+        health = (health - d < 0) ? 0 : health -= d;
+
         animator.SetTrigger("Hit");
+        animator.SetBool("IsStunned", true);
+
+        gameObject.GetComponent<BrainyScript>().KickBack();
+        
         IsDead();
         animator.SetInteger("Health", health);
         Debug.Log(health);
     }
+    
+    private Vector2 kickDirection;
 
-    public void Kill()
-    {
-        RemoveHp(maxHealth);
-    }
+// ...
 
-    void AddHp(int d)
+    public void Kill() { RemoveHp(maxHealth); }
+
+    private void AddHp(int d)
     {
         if (health + d > maxHealth)
         {
@@ -148,6 +134,6 @@ public class EnemyBasic : MonoBehaviour
     private void WakeUp(bool awake)
     {
         animator.SetBool("Awake", awake);
-        if(!awake) animator.SetTrigger("Sleep");
+        //if(!awake) animator.SetTrigger("Sleep");
     }
 }

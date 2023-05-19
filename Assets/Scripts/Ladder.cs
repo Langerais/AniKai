@@ -6,6 +6,8 @@ using UnityEngine;
 public class Ladder : MonoBehaviour
 {
     
+    //Currently does not work (WIP)
+    
     private float climbSpeed = 6;
     private float climbDelay = 1;
     private float lastClimb;
@@ -59,7 +61,7 @@ public class Ladder : MonoBehaviour
         
     }
 
-    bool climbTimer()
+    bool ClimbTimer()
     {
         if (Time.time > lastClimb + climbDelay)
         {

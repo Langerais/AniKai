@@ -10,8 +10,8 @@ public class Parallax : MonoBehaviour
     private Transform cameraTransform;
     [SerializeField]public float parallaxEffectX;
     [SerializeField]public float parallaxEffectY;
-    
-    void Start()
+
+    private void Start()
     {
         startposX = transform.position.x;
         startposY = transform.position.y;
@@ -22,18 +22,16 @@ public class Parallax : MonoBehaviour
         parallaxEffectY *= 0.01f;
     }
 
-    
-    void FixedUpdate()
+
+    private void FixedUpdate()
     {
-        float temp = (camera.transform.position.x * (1 - parallaxEffectX));
-        float distX = (cameraTransform.position.x * parallaxEffectX);
-        float distY = (cameraTransform.position.y * parallaxEffectY);
+        var temp = (camera.transform.position.x * (1 - parallaxEffectX));
+        var distX = (cameraTransform.position.x * parallaxEffectX);
+        var distY = (cameraTransform.position.y * parallaxEffectY);
 
         transform.position = new Vector3(startposX - distX, startposY - distY, transform.position.z);
 
         if (temp > startposX + length) startposX += length;
         else if (temp < startposX - length) startposX -= length;
-
-
     }
 }

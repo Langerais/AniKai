@@ -12,22 +12,10 @@ public class ScoreManager : MonoBehaviour
     private int score = 0;
     public Text scoreText;
     // Start is called before the first frame update
-    void Start()
-    {
-        scoreText.text = score.ToString();
-    }
+    void Start() { scoreText.text = score.ToString(); }
 
-    private void Awake()
-    {
-        instance = this;
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
+    private void Awake() { instance = this; }
+    
     public void AddScore(int s)
     {
         score += s;

@@ -2,11 +2,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class PlayerMovement : MonoBehaviour
 {
 
-    private bool GODMODE = false;   //For debugging purposes
+    private bool godmode = false;   //For debugging purposes
     
     [SerializeField] private float speed = 10f;
     [SerializeField] private float jumpHeight = 10f;
@@ -15,19 +16,26 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] public float energyRestoreRate = 1;
     
     public AudioClip hitAudio;
+    public AudioClip jumpAudio;
+    public AudioClip dashAudio;
+    public AudioClip pickUpAudio;
+    private AudioSource audioSource;
+    private bool isPlaying = false;
+
     private Rigidbody2D rigidBody;
     public Animator animator;
     public SpriteRenderer spriteRenderer;
     private GameObject dashFX;  //Dash trail sprite obj
     public GameObject dashP;   //Object with particles
-    private ParticleSystem _dashPSys;    //Particles system
+    private ParticleSystem dashPSys;    //Particles system
+    public Vector2 dashStartingPoint;
     
     private float inpX = 0;
 
     public HealthBar healthBar;
     public int health;
     [SerializeField]public int maxHealth = 6;
-    public bool RIP;   //Is alive?
+    [FormerlySerializedAs("RIP")] public bool rip;   //Is alive?
 
     public int energy;
     public int maxEnergy = 100;
@@ -36,7 +44,7 @@ public class PlayerMovement : MonoBehaviour
 
     public float dashTimerStart;            //Dash started
     private float dashTimerCurrent;                 //Current dash timer (can dash when 0)            
-    private bool isDashing;
+    public static bool isDashing;
     private float dashDir;
     [SerializeField] private float dashDelay = 10f;  //Min time between dashes
     private float lastDashTime;                     //When dashed last time
@@ -44,7 +52,7 @@ public class PlayerMovement : MonoBehaviour
     
     private int hitSide; // -1 = from left, 1 = from right
     private float hitForce; // enemy hit force
-    private const float stunDelay = 1.5f;
+    private const float StunDelay = 1.5f;
     public bool isGod = false;  //Cant be damaged
     private float godStart;     
     private float godEnd;
@@ -69,8 +77,7 @@ public class PlayerMovement : MonoBehaviour
         godStart = Time.time;
 
         canMove = true;
-        //isHit = false;
-        
+
         health = maxHealth;
         healthBar.SetMaxHealth(maxHealth);
         healthBar.SetHealth(health);
@@ -85,21 +92,16 @@ public class PlayerMovement : MonoBehaviour
         
         
         rigidBody = GetComponent<Rigidbody2D>();
-        //bodyCollider = GetComponent<BoxCollider2D>();
-        _dashPSys = dashP.GetComponent<ParticleSystem>();
+        dashPSys = dashP.GetComponent<ParticleSystem>();
         
         jumpHeight = CalculateJumpForce(Physics2D.gravity.magnitude, 25.0f);
         Physics2D.IgnoreLayerCollision(6, 11);
         Physics2D.IgnoreLayerCollision(12, 11);
-        
-        
+
+        audioSource = GetComponentInChildren<AudioSource>();
     }
 
-    private void FixedUpdate()
-    {
-        JumpFixed();
-
-    }
+    private void FixedUpdate() { JumpFixed(); }
 
     private void Update()
     {
@@ -113,10 +115,20 @@ public class PlayerMovement : MonoBehaviour
             //RemoveHp(maxHealth);
         }
         
-        if (!RIP)
+        if (!rip)
         {
             IsGroundedCheck();
-            if (!GODMODE)
+            
+            animator.SetFloat("SpeedX", Mathf.Abs(rigidBody.velocity.x));
+            animator.SetFloat("SpeedY", rigidBody.velocity.y);
+            animator.SetBool("Grounded", isGrounded);
+
+            if (!isGrounded && animator.GetFloat("SpeedY") == 0)
+            {
+                isGrounded = true;
+            }
+            
+            if (!godmode)
             {
                 ResetGod();
             }
@@ -125,16 +137,19 @@ public class PlayerMovement : MonoBehaviour
             Dash();
             Jump();
 
-
-            animator.SetFloat("SpeedX", Mathf.Abs(rigidBody.velocity.x));
-            animator.SetFloat("SpeedY", rigidBody.velocity.y);
-            animator.SetBool("Grounded", isGrounded);
             hitSide = 0;
 
             if (rigidBody.position.y < -9)  //Instadeath if falls down
             {
                 Kill();
             }
+            
+            if (!audioSource.isPlaying)
+            {
+                isPlaying = false;
+            }
+            
+            
             
         }
         
@@ -155,14 +170,14 @@ public class PlayerMovement : MonoBehaviour
         
         if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyUp(KeyCode.G))
         {
-            if (GODMODE)
+            if (godmode)
             {
-                GODMODE = false;
+                godmode = false;
                 Debug.Log("GODMODE OFF");
             }
             else
             {
-                GODMODE = true;
+                godmode = true;
                 isGod = true;
                 Debug.Log("GODMODE ON");
             }
@@ -177,7 +192,17 @@ public class PlayerMovement : MonoBehaviour
         
         if (Input.GetKeyDown(KeyCode.LeftShift) && Time.time > lastDashTime + dashDelay)
         {
+            SetTempGod(dashDelay);
+            
+            audioSource.clip = dashAudio;
+            audioSource.volume = 1f;
+            audioSource.time = 0.8f;
+            audioSource.Play();
+            
+            var position = rigidBody.position;
+            dashStartingPoint = new Vector2(position.x, position.y);
             isDashing = true;
+            animator.SetBool("IsDashing", true);
             canMove = false;
             dashTimerCurrent = dashTimerStart;
             lastDashTime = Time.time;
@@ -206,11 +231,13 @@ public class PlayerMovement : MonoBehaviour
             {
                 isDashing = false;
                 canMove = true;
+                animator.SetBool("IsDashing", false);
                 DashParticlesSwitch(false); //Stopps emmiting the particles when the dash can be used again
             }
         }
         
         animator.SetBool("IsDashing", isDashing);
+
     }
 
 
@@ -255,6 +282,11 @@ public class PlayerMovement : MonoBehaviour
         {
             rigidBody.velocity = new Vector2(rigidBody.velocity.x, jumpHeight);
             jump = false;
+            
+            audioSource.clip = jumpAudio;
+            audioSource.volume = 1;
+            audioSource.time = 0f;
+            audioSource.Play();
         }
         // Cancel the jump when the button is no longer pressed
         if (jumpCancel)
@@ -272,45 +304,47 @@ public class PlayerMovement : MonoBehaviour
     private void OnCollisionStay2D(Collision2D other)
     {
         
-        Transform enemy = other.gameObject.GetComponent<Transform>();
+        var enemy = other.gameObject.GetComponent<Transform>();
 
-        if (other.gameObject.CompareTag("Enemy") && !other.gameObject.GetComponent<EnemyBasic>().RIP)   //If target is an enemy and alive
+        if (other.gameObject.CompareTag("Enemy") && !other.gameObject.GetComponent<EnemyBasic>().rip)   //If target is an enemy and alive
         {
-            int damage = other.gameObject.GetComponent<EnemyBasic>().damage;
+            var damage = other.gameObject.GetComponent<EnemyBasic>().damage;
             hitForce = other.gameObject.GetComponent<EnemyBasic>().hitForce;
 
-            if (transform.position.x > enemy.position.x) // Front
-            {
-
-                hitSide = 1;
-            } 
-            else
-            {
-
-                hitSide = -1;
-            }
+            hitSide = transform.position.x > enemy.position.x ? 1 : -1;
 
             RemoveHp(damage);
-
             
         } 
     }
-    
+
+
     private void OnCollisionEnter2D(Collision2D other)
     {
+        audioSource.clip = pickUpAudio;
+        audioSource.volume = 0.3f;
+
+        var gotPickup = false;
+
         if (other.gameObject.CompareTag("HealthFlask"))
         {
-            Physics2D.IgnoreCollision(other.gameObject.GetComponent<Collider2D>(), transform.GetComponent<Collider2D>());
-            Destroy(other.gameObject);
+            gotPickup = true;
             AddHp(3);
-                
-        } else if (other.gameObject.CompareTag("EnergyPill"))
+        }
+        else if (other.gameObject.CompareTag("EnergyPill"))
         {
-            Physics2D.IgnoreCollision(other.gameObject.GetComponent<Collider2D>(), transform.GetComponent<Collider2D>());
-            Destroy(other.gameObject);
+            gotPickup = true;
             AddEnergy(100);
         }
 
+        if (gotPickup && !isPlaying)
+        {
+            Physics2D.IgnoreCollision(other.gameObject.GetComponent<Collider2D>(), transform.GetComponent<Collider2D>());
+            Destroy(other.gameObject);
+            audioSource.time = 0f;
+            audioSource.Play();
+            isPlaying = true;
+        }
     }
 
 
@@ -328,7 +362,7 @@ public class PlayerMovement : MonoBehaviour
     ///////////////////////////////////// UTILITY STAFF ///////////////////////////////////////////////////////////
     
 
-    private float CalculateJumpForce(float gravityStrength, float height) //Jump force based on gravity scale
+    private static float CalculateJumpForce(float gravityStrength, float height) //Jump force based on gravity scale
     {
         //h = v^2/2g
         //2gh = v^2
@@ -338,24 +372,17 @@ public class PlayerMovement : MonoBehaviour
 
     private void IsGroundedCheck()
     {
-        Collider2D collider = 
+        var collider = 
             Physics2D.OverlapCircle(isGroundedChecker.position,
                 checkGroundRadius, groundLayer);
 
-        if (collider != null)
-        {
-            isGrounded = true;
-        }
-        else
-        {
-            isGrounded = false;
-        }
+        isGrounded = collider != null;
     }
 
     private void DashParticlesSwitch(bool on)
     {
-        if (on) _dashPSys.Play();
-        else _dashPSys.Stop();
+        if (on) dashPSys.Play();
+        else dashPSys.Stop();
     }
 
 
@@ -363,25 +390,28 @@ public class PlayerMovement : MonoBehaviour
     {
         if (health <= 0)
         {
-            RIP = true;
+            rip = true;
             transform.GetComponent<PlayerAttack>().audioSource.enabled = false;
             //camera.GetComponent<CameraScript>().GameOver();
         }
         else
         {
-            RIP = false;
+            rip = false;
         }
-        animator.SetBool("isDead", RIP);
+        animator.SetBool("isDead", rip);
     }
 
     public void RemoveHp(int d)        //After first hit in the game removes HP 2 times. Just can't find the issue
     {
         if (!isGod)
         {
-            SetTempGod(stunDelay);
+            SetTempGod(StunDelay);
             
-            GetComponentInChildren<AudioSource>().clip = hitAudio;
-            GetComponentInChildren<AudioSource>().Play();
+            audioSource.clip = hitAudio;
+            audioSource.volume = 0.3f;
+            audioSource.time = 0f;
+            audioSource.Play();
+
             
             if (health - d < 0)
             {
@@ -396,11 +426,9 @@ public class PlayerMovement : MonoBehaviour
             ScoreManager.instance.AddScore(d * -10);
             
             rigidBody.velocity = Vector2.zero;
-            Vector2 impulse = new Vector2(transform.right.x * hitSide * hitForce, 1);
+            var impulse = new Vector2(transform.right.x * hitSide * hitForce, 1);
             rigidBody.AddForce(impulse);
-            
-            
-            
+
         }
 
         healthBar.SetHealth(health);
@@ -414,14 +442,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void AddHp(int d)
     {
-        if (health + d > maxHealth)
-        {
-            health = maxHealth;
-        }
-        else
-        {
-            health += d;
-        }
+        health = (health + d > maxHealth) ? maxHealth : (health + d);
         healthBar.SetHealth(health);
         Debug.Log(health);
     }
@@ -442,23 +463,10 @@ public class PlayerMovement : MonoBehaviour
 
     private void AddEnergy(int e)
     {
-        if (energy + e > maxEnergy)
-        {
-            energy = maxEnergy;
-        }
-        else
-        {
-            energy += e;
-        }
-
+        energy = (energy + e > maxEnergy) ? maxEnergy : (energy + e);
         energyBar.SetEnergy(energy);
     }
-
-    private void RegenEnergy()
-    {
-        
-    }
-
+    
     private void SetTempGod(float time)
     {
         godStart = Time.time;
@@ -483,11 +491,7 @@ public class PlayerMovement : MonoBehaviour
     
     private void OnDrawGizmosSelected()
     {
-        if (isGroundedChecker == null)
-        {
-            return;
-        }
-        Gizmos.DrawWireSphere(isGroundedChecker.position, checkGroundRadius);
+        if (isGroundedChecker != null) { Gizmos.DrawWireSphere(isGroundedChecker.position, checkGroundRadius); }
     }
     
     

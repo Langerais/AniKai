@@ -11,19 +11,9 @@ public class EnergyBar : MonoBehaviour
 
     [SerializeField] public float restoreRate = 1;
     
-//public Animator spinnerAnimator;
-
-
-    public void SetMaxEnergy(int energy)
-    {
-        slider.maxValue = energy;
-    }
+    public void SetMaxEnergy(int energy) { slider.maxValue = energy; }
     
-    public void SetEnergy(int energy)
-    {
-        slider.value = energy;
-        //spinnerAnimator.SetInteger("Energy", energy);
-    }
+    public void SetEnergy(int energy) { slider.value = energy; }
     
     
 }

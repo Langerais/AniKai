@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
@@ -10,7 +11,7 @@ public class GameManager : MonoBehaviour
 
     //public sc
     public GameObject player;
-    public int playerHP;
+    [SerializeField] public int playerHp;
     public AudioSource audioSource;
     public AudioClip backgroundMusic;
     public AudioClip gameOverMusic;
@@ -27,7 +28,7 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        playerHP = player.GetComponent<PlayerMovement>().health;
+        playerHp = player.GetComponent<PlayerMovement>().health;
         audioSource.clip = backgroundMusic;
         audioSource.Play();
         canRestart = false;
@@ -35,11 +36,9 @@ public class GameManager : MonoBehaviour
     
     private void Update()
     {
-        playerHP = player.GetComponent<PlayerMovement>().health;
-        if (playerHP <= 0 && !gameIsOver)
-        {
-            GameOver();
-        }
+        playerHp = player.GetComponent<PlayerMovement>().health;
+        
+        if (playerHp <= 0 && !gameIsOver) { GameOver(); }
 
         if (Time.time > blackScreenFadeStart + restartDelay && gameIsOver)
         {
@@ -47,10 +46,7 @@ public class GameManager : MonoBehaviour
             restartGameText.color = new Color(1, 1, 1, blackScreenAlpha);
         }
         
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            SceneManager.LoadScene("Starting Screen");
-        }
+        if (Input.GetKeyDown(KeyCode.Escape)) { SceneManager.LoadScene("Starting Screen"); }
         
         if (Input.anyKey && canRestart)
         {
@@ -58,7 +54,6 @@ public class GameManager : MonoBehaviour
             RestartGame();
         }
         
-
         BlackScreenReveal();
 
         blackScreen.GetComponent<SpriteRenderer>().color = new Color(0, 0, 0, blackScreenAlpha);
@@ -68,34 +63,28 @@ public class GameManager : MonoBehaviour
 
     private void GameOver()
     {
-        if (!gameIsOver)
-        {
-            BlackScreenReveal();
-            gameIsOver = true;
-            blackScreenFadeStart = Time.time;
-            audioSource.Pause();
-            audioSource.clip = gameOverMusic;
-            audioSource.loop = false;
-            audioSource.PlayDelayed(0.5f);
-            Destroy(energyBar);
-            Destroy(healthBar);
-            
-        }
-       
+        if (gameIsOver) return;
+        
+        BlackScreenReveal();
+        gameIsOver = true;
+        blackScreenFadeStart = Time.time;
+        audioSource.Pause();
+        audioSource.clip = gameOverMusic;
+        audioSource.loop = false;
+        audioSource.PlayDelayed(0.5f);
+        Destroy(energyBar);
+        Destroy(healthBar);
+
     }
 
     private void RestartGame()
     {
         restartGameText.enabled = false;
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-        
     }
 
     private void BlackScreenReveal()
     {
-        if (gameIsOver && blackScreenAlpha < 1)
-        {
-            blackScreenAlpha += 0.005f;
-        }
+        if (gameIsOver && blackScreenAlpha < 1) { blackScreenAlpha += 0.005f; }
     }
 }

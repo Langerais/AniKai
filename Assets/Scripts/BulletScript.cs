@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class BulletScript : MonoBehaviour
 {
-    // Start is called before the first frame update
 
     [SerializeField] public float speed = 20f;
     [SerializeField] public float hitRange = 1f;
@@ -13,14 +12,16 @@ public class BulletScript : MonoBehaviour
     public Transform shotSpot;  //Starting point
     private bool launched;
     private bool hit;
-    
-    void Start()
+
+    private void Start()
     {
+        transform.localScale = new Vector2(1.5f, 1.5f);
         hit = false;
         launched = false;
+        player = GameObject.FindGameObjectWithTag("Player").transform;
     }
-    
-    void Update()
+
+    private void Update()
     {
         
         transform.GetComponent<Animator>().SetBool("Launched", launched);
@@ -31,7 +32,7 @@ public class BulletScript : MonoBehaviour
             gameObject.GetComponent<Animator>().SetTrigger("Hit");
             player.gameObject.GetComponent<PlayerMovement>().RemoveHp(damage);
             transform.Translate(0,0,0);
-            Debug.Log("HIT");
+            //Debug.Log("HIT");
         }
         
         if (!hit && launched)
@@ -56,8 +57,5 @@ public class BulletScript : MonoBehaviour
         transform.GetComponent<Animator>().SetBool("Launched", true);
     }
     
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.DrawWireSphere(transform.position, hitRange);
-    }
+    private void OnDrawGizmosSelected() { Gizmos.DrawWireSphere(transform.position, hitRange); }
 }

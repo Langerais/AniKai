@@ -118,9 +118,6 @@ MonoBehaviour:
   speed: 20
   hitRange: 1
   damage: 1
-  enemyLayer:
-    serializedVersion: 2
-    m_Bits: 64
   player: {fileID: 0}
   shotSpot: {fileID: 702260984}
 --- !u!1 &702260983
@@ -302,26 +299,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2a4b251ee08148a4e8db23199414936b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 10
-  jumpHeight: 10
-  minJumpHeight: 4
-  dashForce: 100000
   awarenessLostRange: 11
   canLooseAwareness: 0
   audioSource: {fileID: 0}
   damage: 1
   hitForce: 2500
-  mSpeed: {x: 0, y: 0}
   animator: {fileID: 6592727284118696418}
   awarenessSpot: {fileID: 6592727282140065127}
-  awarenessLayer:
-    serializedVersion: 2
-    m_Bits: 64
   player: {fileID: 0}
   score: 50
   health: 0
   maxHealth: 2
-  RIP: 0
+  rip: 0
 --- !u!95 &6592727284118696418
 Animator:
   serializedVersion: 3
@@ -350,17 +339,21 @@ MonoBehaviour:
   m_GameObject: {fileID: 3087646143647580249}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 704e56a14d76edf43b1c7edbbeaa23d8, type: 3}
+  m_Script: {fileID: 11500000, guid: 2a4b251ee08148a4e8db23199414936b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 10
-  attackDelay: 3
-  droneHeight: 10
+  awarenessLostRange: 30
+  canLooseAwareness: 1
+  audioSource: {fileID: 0}
+  damage: 1
+  hitForce: 2500
+  animator: {fileID: 0}
+  awarenessSpot: {fileID: 0}
   player: {fileID: 0}
-  target: {fileID: 0}
-  animator: {fileID: 6592727284118696418}
-  bullet: {fileID: 249390378}
-  shotSpot: {fileID: 702260984}
+  score: 100
+  health: 0
+  maxHealth: 2
+  rip: 0
 --- !u!1 &6592727282140065126
 GameObject:
   m_ObjectHideFlags: 0
